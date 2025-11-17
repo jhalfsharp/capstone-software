@@ -1,0 +1,137 @@
+// *******************************************************
+// Inside the waterLeakageSensor.h
+// *******************************************************
+
+
+// =========================================
+// Main Functions
+// =========================================
+
+void WaterRecognizeTEST(void);
+
+void initialLED_TEST_WLS(int v);
+
+
+
+// =========================================
+// GPIO Initialization
+// =========================================
+
+void waterLeakageTEST_GPIO_Init(void);
+
+// PA0 as digital input
+void PC0_GPIO_Init(void);
+
+// LED PA5
+void InternalLED_GPIO_Init_WLS(void);
+
+
+// *******************************************************
+// Inside the waterLeakageSensor.c
+// *******************************************************
+// HEADER
+#include "waterLeakageSensor.h"
+
+
+// =========================================
+// Main Functions
+// =========================================
+
+void WaterRecognizeTEST(void){
+
+	// Read PC0 input
+	GPIO_PinState inputState = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_0);
+	if (inputState == GPIO_PIN_SET)  // PA0 is HIGH (~5V)
+	{
+      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);   // Turn LED ON
+    }
+    else                             // PA0 is LOW (0V)
+    {
+      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET); // Turn LED OFF
+    }
+	HAL_Delay(200); // Wait 200 ms to debounce
+}
+
+void initialLED_TEST_WLS(int v){
+	// 0: off, 1: on
+
+	if (v == 0){
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET); // Turn OFF
+	}
+	else if (v == 1){
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET); // Turn OFF
+	}
+}
+
+
+
+// =========================================
+// GPIO Initialization
+// =========================================
+
+void waterLeakageTEST_GPIO_Init(void){
+	PC0_GPIO_Init();
+	InternalLED_GPIO_Init_WLS();
+}
+
+// PC0 as digital input
+void PC0_GPIO_Init(void){
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
+	__HAL_RCC_GPIOC_CLK_ENABLE();
+
+	// Configure PC0 as input (like user button)
+	GPIO_InitStruct.Pin = GPIO_PIN_0;
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStruct.Pull = GPIO_PULLDOWN; // or PULLUP, depending on your circuit
+	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+}
+
+// LED PA5
+void InternalLED_GPIO_Init_WLS(void){
+	__HAL_RCC_GPIOA_CLK_ENABLE();  // Enable GPIOA clock
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+    // Configure PA5 as output (LED)
+    GPIO_InitStruct.Pin = GPIO_PIN_5;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;  // Push-pull output
+    GPIO_InitStruct.Pull = GPIO_NOPULL;          // No internal pull-up or pull-down
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+}
+
+
+// *******************************************************
+// Inside the main.h file
+// *******************************************************
+
+
+
+// Water Leakage Sensor
+#include "waterLeakageSensor.h"
+
+
+// *******************************************************
+// Inside the main.c file
+// with sysClock setup
+// *******************************************************
+
+int main(void)
+{
+
+	// Base Setup
+	HAL_Init();
+	SystemClock_Config();
+
+	// GPIO Setup
+	waterLeakageTEST_GPIO_Init();
+
+
+  // LED set up
+	initialLED_TEST_WLS(0);
+
+  while (1)
+  {
+	  WaterRecognizeTEST();
+
+  }
+}
