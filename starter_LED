@@ -1,0 +1,141 @@
+// ===================================================
+// ESP32 Starter code to test RGB LED working well with 3 kinds of colors shinging
+// ===================================================
+
+
+// ===================================================
+// starterTestLED.h
+// ===================================================
+
+#pragma once
+
+#include "esp_err.h"
+
+esp_err_t rgb_led_init(void);
+esp_err_t rgb_led_set(uint8_t r, uint8_t g, uint8_t b);
+esp_err_t rgb_led_off(void);
+
+// Main
+esp_err_t rgb_led_start_demo(void);
+esp_err_t rgb_led_stop_demo(void);
+
+// ===================================================
+// starterTestLED.c
+// ===================================================
+
+#include "starterTestLED.h" // Self Include
+
+#include "led_strip.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+#define RGB_LED_GPIO        8
+#define LED_STRIP_LED_NUM   1
+
+static led_strip_handle_t s_strip = NULL;
+static TaskHandle_t s_demo_task = NULL;
+
+// Init, Basic Utility
+esp_err_t rgb_led_init(void)
+{
+    led_strip_config_t strip_config = {
+        .strip_gpio_num = RGB_LED_GPIO,
+        .max_leds = LED_STRIP_LED_NUM,
+        // .led_pixel_format = LED_PIXEL_FORMAT_GRB,
+        .led_model = LED_MODEL_WS2812,
+        .flags.invert_out = false,
+    };
+
+    led_strip_rmt_config_t rmt_config = {
+        .clk_src = RMT_CLK_SRC_DEFAULT,
+        .resolution_hz = 10 * 1000 * 1000,
+        .mem_block_symbols = 0,
+        .flags.with_dma = false,
+    };
+
+    esp_err_t err = led_strip_new_rmt_device(
+        &strip_config, &rmt_config, &s_strip
+    );
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    return led_strip_clear(s_strip);
+}
+
+esp_err_t rgb_led_set(uint8_t r, uint8_t g, uint8_t b)
+{
+    if (!s_strip) return ESP_ERR_INVALID_STATE;
+
+    ESP_ERROR_CHECK(led_strip_set_pixel(s_strip, 0, r, g, b));
+    return led_strip_refresh(s_strip);
+}
+
+esp_err_t rgb_led_off(void)
+{
+    if (!s_strip) return ESP_ERR_INVALID_STATE;
+    return led_strip_clear(s_strip);
+}
+
+
+
+// Main Actions
+// Internal Utility
+static void rgb_led_demo_task(void *arg)
+{
+    while (1) {
+        rgb_led_set(255, 0, 0);   // Red
+        vTaskDelay(pdMS_TO_TICKS(500));
+
+        rgb_led_set(0, 255, 0);   // Green
+        vTaskDelay(pdMS_TO_TICKS(500));
+
+        rgb_led_set(0, 0, 255);   // Blue
+        vTaskDelay(pdMS_TO_TICKS(500));
+
+        rgb_led_off();
+        vTaskDelay(pdMS_TO_TICKS(300));
+    }
+}
+
+// Do routine or stop it
+esp_err_t rgb_led_start_demo(void)
+{
+    if (s_demo_task) return ESP_ERR_INVALID_STATE;
+
+    xTaskCreate(
+        rgb_led_demo_task,
+        "rgb_led_demo",
+        2048,
+        NULL,
+        5,
+        &s_demo_task
+    );
+
+    return ESP_OK;
+}
+
+esp_err_t rgb_led_stop_demo(void)
+{
+    if (!s_demo_task) return ESP_ERR_INVALID_STATE;
+
+    TaskHandle_t task = s_demo_task;
+    s_demo_task = NULL;
+    vTaskDelete(task);
+    rgb_led_off();
+
+    return ESP_OK;
+}
+
+// ===================================================
+// main.c
+// ===================================================
+
+// LED starter Code
+#include "starterTestLED.h"
+
+void app_main(void)
+{
+    rgb_led_init();
+    rgb_led_start_demo();
+}
