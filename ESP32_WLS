@@ -1,0 +1,136 @@
+// ####################################
+// Water Leakage Sensor Code
+// ####################################
+// unfinished due to unknown reason
+
+
+// ####################################
+// Wiring connection
+// ####################################
+
+// GPIO Pin -- WLS(can just use jumper wire) -- GND
+
+
+// ####################################
+// WaterLeakageSensor.h
+// ####################################
+
+#pragma once
+
+#include "esp_err.h"
+#include <stdbool.h>
+
+// Init
+esp_err_t WLS_init(void);
+
+/* must be called periodically (or from a task) */
+void WLS_poll(void);
+
+/* query state */
+bool WLS_print(void);
+
+
+// ####################################
+// WaterLeakageSensor.c
+// ####################################
+
+#include "waterLeakageSensor.h"
+
+#include "driver/gpio.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+//TESTING
+#include <stdio.h>
+#include "esp_err.h"
+
+/* -------- configuration -------- */
+#define PIN_GPIO        1          // change to your board's button pin [7]
+#define PIN_ACTIVE_LVL  0          // 0 = active-low, 1 = active-high
+// #define DEBOUNCE_MS        50
+
+/* -------- private state -------- */
+static bool s_print_enabled = false;
+static int pinLev = 0;
+
+// TEST
+static int optTime = 0;
+
+// For change state 
+// static int  s_last_level = 1;
+// static TickType_t s_last_change = 0;
+ 
+/* -------- public API -------- */
+
+esp_err_t WLS_init(void)
+{
+    gpio_config_t cfg = {
+        .pin_bit_mask = 1ULL << PIN_GPIO,
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+
+    ESP_ERROR_CHECK(gpio_config(&cfg));
+
+    // TEST
+    int level = gpio_get_level(PIN_GPIO);
+    optTime += 1;
+    printf("%d: Current lev: %d\n", optTime, level);
+
+
+    return gpio_config(&cfg);
+}
+
+void WLS_poll(void)
+{
+    int level = gpio_get_level(PIN_GPIO);
+
+    // TEST
+    optTime += 1;
+    printf("%d: Current lev: %d\n", optTime, level);
+
+    if (level == PIN_ACTIVE_LVL) {
+        s_print_enabled = true;
+    } 
+    else {
+        s_print_enabled = false;
+    }
+    vTaskDelay(pdMS_TO_TICKS(500));
+}
+
+bool WLS_print(void)
+{
+    return s_print_enabled;
+}
+
+
+// ####################################
+// main.c
+// ####################################
+
+#include <stdio.h>
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+// WLS System
+#include "waterLeakageSensor.h"
+
+void app_main(void)
+{
+    WLS_init();
+
+    printf("Start the code\n");
+
+    while(1){
+        WLS_poll();
+        if (WLS_print()){
+            printf("Leaking!\n");
+        }
+        else{
+            printf("normal\n");
+        }
+    }
+}
