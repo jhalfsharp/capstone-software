@@ -35,6 +35,7 @@ if downloadSize not in model_map:
 model_name, model_path = model_map[downloadSize]
 # Check whether model is installed locally
 if not os.path.isdir(model_path):
+    print(model_path)
     raise FileNotFoundError(
         f"the model {model_name} is not installed yet, please install before use."
     )
@@ -64,10 +65,14 @@ pipe = pipeline(
 result = pipe(
     inputAudio,
     generate_kwargs={
-        "language": "english",
-        "task": "transcribe"
+        # "language": "english",
+        # "task": "transcribe"
     }
 )
 
 print("\n\nBelow is the output text from speech:")
 print(result["text"])
+
+
+# Privacy Delete
+# os.remove(inputAudio)

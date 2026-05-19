@@ -9,8 +9,12 @@ import time
 
 #Edit to match actual model location and filetype (whether tflite or onnx)
 DIR = str(Path(__file__).resolve().parent / "SecondIteration" / "sherlock.onnx")
+<<<<<<< HEAD
 #_oww_model = Model(wakeword_models=[DIR])
 _oww_model = Model(wakeword_model_paths=[DIR])
+=======
+_oww_model = Model(wakeword_models=[DIR])
+>>>>>>> ef7fb7cbbbeef75634e47a470f97e851e4a176c1
 
 #Provide amount of channels. Defaults to 2, as you can see
 def wakeword_listener(channels=2):
