@@ -88,6 +88,105 @@ def record_and_transcribe(channels=2):
     except Exception as e:
         print(f"\n❌ Error during API call: {e}")
 
+def text_to_command(filePath : str):
+
+    with open(OUTPUT_TEXT_FILE, "r", encoding="utf-8") as f:
+            translated_text = f.read()
+
+    text = translated_text.lower().strip()
+
+    # Command: Action
+    action_groups = {
+        "open_on": ["open", "turn on"],
+        "close_off": ["close", "turn off", "switch off"],
+        "check": ["check", "evaluate", "find"],
+    }
+
+    target_groups = {
+        "light": ["light", "lights"],
+        # "window": ["window", "windows"],
+        "weather": ["weather"], # whole data
+        "temperature" : ["temperature"],
+        "pressure" : ["pressure, air pressure"],
+        "humidity" : ["humidity, how wet"],
+        "water_leak": ["water leak", "water leakage", "leak"],
+        "motion" : ["motion"],
+        "camera" : ["camera"]
+    }
+
+    detected_action = None
+    detected_target = None
+
+    # Find action keyword
+    for action_type, keywords in action_groups.items():
+        for keyword in keywords:
+            if keyword in text:
+                detected_action = action_type
+                break
+        if detected_action:
+            break
+
+    # Find target keyword
+    for target_type, keywords in target_groups.items():
+        for keyword in keywords:
+            if keyword in text:
+                detected_target = target_type
+                break
+        if detected_target:
+            break
+
+    # Decide command type
+    # Light (Unsured)
+    if detected_action == "open_on" and detected_target == "light":
+        command_type = "TURN_LIGHT_ON"
+
+    elif detected_action == "close_off" and detected_target == "light":
+        command_type = "TURN_LIGHT_OFF"
+
+    # elif detected_action == "open_on" and detected_target == "window":
+    #     command_type = "OPEN_WINDOW"
+
+    # elif detected_action == "close_off" and detected_target == "window":
+    #     command_type = "CLOSE_WINDOW"
+
+    # BME
+    elif detected_action == "check" and detected_target == "weather":
+        command_type = "CHECK_WEATHER"
+
+    elif detected_action == "check" and detected_target == "temperature":
+        command_type = "CHECK_TEMPERATURE"
+
+    elif detected_action == "check" and detected_target == "pressure":
+        command_type = "CHECK_PRESSURE"
+
+    elif detected_action == "check" and detected_target == "humidity":
+        command_type = "CHECK_HUMIDITY"
+
+    # Water Leak
+    elif detected_action == "check" and detected_target == "water_leak":
+        command_type = "CHECK_WATER_LEAK" # normal or leaking
+
+    # Motion of Light
+    elif detected_action == "check" and detected_target == "motion":
+        command_type = "CHECK_MOTION_LIGHT" # on or off
+    
+    # Status of Camera
+    elif detected_action == "check" and detected_target == "camera":
+        command_type = "CHECK_CAMERA_STATUS" # on or off
+    
+    else:
+        command_type = "UNKNOWN_COMMAND"
+
+    print("\n🔎 Keyword Catch Result:")
+    print(f"Original text: {translated_text}")
+    print(f"Detected action group: {detected_action}")
+    print(f"Detected target group: {detected_target}")
+    print(f"Command type received: {command_type}")
+
+    return command_type
+
+    
+
 def main():
     # Attempt to query the max channels of the specific hw:2,0 device
     default_input = sd.default.device[0]
@@ -110,6 +209,9 @@ def main():
             
             # Record the follow-up command and transcribe
             record_and_transcribe(channels=channels)
+
+            # Transcribe to Command
+            text_to_command(OUTPUT_TEXT_FILE)
             
             print("\n⏳ Resuming wake word detection in 2 seconds...")
             time.sleep(2) 

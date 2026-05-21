@@ -147,17 +147,23 @@ def wordCatch(translated_text):
 
     text = translated_text.lower().strip()
 
+    # Command: Action
     action_groups = {
         "open_on": ["open", "turn on"],
         "close_off": ["close", "turn off", "switch off"],
-        "check_eval": ["check", "evaluate"],
+        "check": ["check", "evaluate", "find"],
     }
 
     target_groups = {
         "light": ["light", "lights"],
-        "window": ["window", "windows"],
-        "weather": ["weather"],
+        # "window": ["window", "windows"],
+        "weather": ["weather"], # whole data
+        "temperature" : ["temperature"],
+        "pressure" : ["pressure, air pressure"],
+        "humidity" : ["humidity, how wet"],
         "water_leak": ["water leak", "water leakage", "leak"],
+        "motion" : ["motion"],
+        "camera" : ["camera"]
     }
 
     detected_action = None
@@ -182,24 +188,44 @@ def wordCatch(translated_text):
             break
 
     # Decide command type
+    # Light (Unsured)
     if detected_action == "open_on" and detected_target == "light":
         command_type = "TURN_LIGHT_ON"
 
     elif detected_action == "close_off" and detected_target == "light":
         command_type = "TURN_LIGHT_OFF"
 
-    elif detected_action == "open_on" and detected_target == "window":
-        command_type = "OPEN_WINDOW"
+    # elif detected_action == "open_on" and detected_target == "window":
+    #     command_type = "OPEN_WINDOW"
 
-    elif detected_action == "close_off" and detected_target == "window":
-        command_type = "CLOSE_WINDOW"
+    # elif detected_action == "close_off" and detected_target == "window":
+    #     command_type = "CLOSE_WINDOW"
 
-    elif detected_action == "check_eval" and detected_target == "weather":
+    # BME
+    elif detected_action == "check" and detected_target == "weather":
         command_type = "CHECK_WEATHER"
 
-    elif detected_action == "check_eval" and detected_target == "water_leak":
+    elif detected_action == "check" and detected_target == "temperature":
+        command_type = "CHECK_TEMPERATURE"
+
+    elif detected_action == "check" and detected_target == "pressure":
+        command_type = "CHECK_PRESSURE"
+
+    elif detected_action == "check" and detected_target == "humidity":
+        command_type = "CHECK_HUMIDITY"
+
+    # Water Leak
+    elif detected_action == "check" and detected_target == "water_leak":
         command_type = "CHECK_WATER_LEAK"
 
+    # Motion of Light
+    elif detected_action == "check" and detected_target == "motion":
+        command_type = "CHECK_MOTION_LIGHT"
+    
+    # Status of Camera
+    elif detected_action == "check" and detected_target == "camera":
+        command_type = "CHECK_CAMERA_STATUS"
+    
     else:
         command_type = "UNKNOWN_COMMAND"
 
